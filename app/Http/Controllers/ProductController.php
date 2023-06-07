@@ -21,8 +21,7 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required',
-            'slug' => 'required',
+            'title' => 'required',
             'price' => 'required'
         ]);
 
@@ -58,8 +57,8 @@ class ProductController extends Controller
     /**
      * Search for a name.
      */
-    public function search(string $name)
-    {
-        return Product::where('name', 'like', '%'.$name.'%')->get();
-    }
+    // public function search(string $title)
+    // {
+    //     return Product::where('title', 'like', '%'.$title.'%')->get();
+    // }
 }
