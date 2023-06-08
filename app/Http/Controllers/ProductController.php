@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
@@ -12,7 +14,15 @@ class ProductController extends Controller
      */
     public function index()
     {
-        return Product::all();
+        $products = Product::all();
+
+        $products->each(function ($product) {
+            if ($product->image) {
+                $product->image = Storage::url($product->image);
+            }
+        });
+
+        return $products;
     }
 
     /**
@@ -20,12 +30,32 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        Log::info($request);
+
         $request->validate([
             'title' => 'required',
-            'price' => 'required'
+            'price' => 'required',
+            'image' => 'image|mimes:jpeg,png,jpg,gif'
         ]);
 
-        return Product::create($request->all());
+        if ($request->hasFile('image')) {
+            $id = uniqid();
+            $file = $request->file('image');
+            $extension = $file->getClientOriginalExtension();
+            $path = Storage::putFileAs(
+                'public/images', $file, $id . '.' . $extension
+            );
+        } else {
+            $path = null;
+        }
+
+
+        return Product::create([
+            'title' => $request->input('title'),
+            'description' => $request->input('description'),
+            'price' => $request->input('price'),
+            'image' => $path,
+        ]);
     }
 
     /**
@@ -41,6 +71,7 @@ class ProductController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        // TODO update image
         $product = Product::find($id);
         $product->update($request->all());
         return $product;
@@ -50,7 +81,7 @@ class ProductController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
-    {
+    {   // TODO Delete image from storage
         return Product::destroy($id);
     }
 
