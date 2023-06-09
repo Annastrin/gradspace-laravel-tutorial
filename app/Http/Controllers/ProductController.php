@@ -30,8 +30,6 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        Log::info($request);
-
         $request->validate([
             'title' => 'required',
             'price' => 'required',
@@ -49,13 +47,16 @@ class ProductController extends Controller
             $path = null;
         }
 
-
-        return Product::create([
+        $product = Product::create([
             'title' => $request->input('title'),
             'description' => $request->input('description'),
             'price' => $request->input('price'),
             'image' => $path,
         ]);
+
+        $product->image = Storage::url($path);
+
+        return $product;
     }
 
     /**
