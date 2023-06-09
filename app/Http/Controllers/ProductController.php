@@ -17,9 +17,7 @@ class ProductController extends Controller
         $products = Product::all();
 
         $products->each(function ($product) {
-            if ($product->image) {
-                $product->image = Storage::url($product->image);
-            }
+           $this->transformProductImageURL($product);
         });
 
         return $products;
@@ -36,16 +34,7 @@ class ProductController extends Controller
             'image' => 'image|mimes:jpeg,png,jpg,gif'
         ]);
 
-        if ($request->hasFile('image')) {
-            $id = uniqid();
-            $file = $request->file('image');
-            $extension = $file->getClientOriginalExtension();
-            $path = Storage::putFileAs(
-                'public/images', $file, $id . '.' . $extension
-            );
-        } else {
-            $path = null;
-        }
+        $path = $request->hasFile('image') ? $this->saveImageFile($request->file('image')) : null;
 
         $product = Product::create([
             'title' => $request->input('title'),
@@ -54,28 +43,46 @@ class ProductController extends Controller
             'image' => $path,
         ]);
 
-        $product->image = Storage::url($path);
-
-        return $product;
+        return $this->transformProductImageURL($product);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
-    {
-        return Product::find($id);
-    }
+    // public function show(string $id)
+    // {
+    //     return Product::find($id);
+    // }
 
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
     {
-        // TODO update image
         $product = Product::find($id);
-        $product->update($request->all());
-        return $product;
+
+        if ($request->has('title')) {
+            $product->title = $request->input('title');
+        }
+
+        if ($request->has('description')) {
+            $product->description = $request->input('description');
+        }
+
+        if ($request->has('price')) {
+            $product->price = $request->input('price');
+        }
+
+        if ($request->hasFile('image')) {
+            if ($product->image) {
+                Storage::delete($product->image);
+            }
+            $product->image = $this->saveImageFile($request->file('image'));
+        }
+
+        $product->save();
+
+        return $this->transformProductImageURL($product);
     }
 
     /**
@@ -91,6 +98,20 @@ class ProductController extends Controller
         return Product::destroy($id);
     }
 
+    private function transformProductImageURL($product) {
+        if ($product->image) {
+            $product->image = Storage::url($product->image);
+        }
+        return $product;
+    }
+
+    private function saveImageFile($file) {
+        $id = uniqid();
+        $extension = $file->getClientOriginalExtension();
+        return Storage::putFileAs(
+            'public/images', $file, $id . '.' . $extension
+        );
+    }
     /**
      * Search for a name.
      */
