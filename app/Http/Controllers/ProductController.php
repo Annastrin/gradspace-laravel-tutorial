@@ -82,7 +82,12 @@ class ProductController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
-    {   // TODO Delete image from storage
+    {
+        $product = Product::find($id);
+        if ($product->image) {
+            Storage::delete($product->image);
+        }
+
         return Product::destroy($id);
     }
 
